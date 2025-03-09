@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import streamlit as st
 import numpy as np
+import os
 from matplotlib.colors import LinearSegmentedColormap
 
 # Set page config
@@ -15,7 +16,7 @@ sns.set_palette(custom_palette)
 sns.set(style='darkgrid')
 
 # Menyiapkan data day_df
-day_df = pd.read_csv("day.csv")
+day_df = pd.read_csv(os.path.join(os.path.dirname(__file__), "day.csv"))
 
 # Menghapus kolom yang tidak diperlukan
 drop_col = ['windspeed']
