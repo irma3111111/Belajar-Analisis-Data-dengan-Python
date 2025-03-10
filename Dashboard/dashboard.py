@@ -190,21 +190,29 @@ with st.sidebar:
         value=[min_date, max_date]
     )
     
-    # Filter musim (dibuat permanen)
+    # Filter musim
     all_seasons = day_df['musim'].unique().tolist()
-    selected_seasons = all_seasons  # Set selected seasons to all seasons permanently
+    selected_seasons = st.multiselect(
+        'Pilih Musim',
+        options=all_seasons,
+        default=[all_seasons[0]]  # Set default to the first season
+    )
+    
+    # Memastikan setidaknya satu musim dipilih
+    if not selected_seasons:
+        selected_seasons = [all_seasons[0]]  # Kembali ke musim pertama jika tidak ada yang dipilih
     
     # Filter kondisi cuaca
     all_weather = day_df['kondisi_cuaca'].unique().tolist()
     selected_weather = st.multiselect(
         'Pilih Kondisi Cuaca',
         options=all_weather,
-        default=all_weather
+        default=[all_weather[0]]  # Set default to the first weather condition
     )
     
     # Memastikan setidaknya satu kondisi cuaca dipilih
     if not selected_weather:
-        selected_weather = all_weather  # Kembalikan ke semua kondisi cuaca jika tidak ada yang dipilih
+        selected_weather = [all_weather[0]]  # Kembali ke kondisi cuaca pertama jika tidak ada yang dipilih
     
     # Tipe hari
     day_type = st.radio(
