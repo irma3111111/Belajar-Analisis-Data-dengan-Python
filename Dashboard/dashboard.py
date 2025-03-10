@@ -212,13 +212,9 @@ with st.sidebar:
         value=[min_date, max_date]
     )
     
-    # Filter musim
+    # Filter musim (dibuat permanen)
     all_seasons = day_df['musim'].unique().tolist()
-    selected_seasons = st.multiselect(
-        'Pilih Musim',
-        options=all_seasons,
-        default=all_seasons
-    )
+    selected_seasons = all_seasons  # Set selected seasons to all seasons permanently
     
     # Filter kondisi cuaca
     all_weather = day_df['kondisi_cuaca'].unique().tolist()
