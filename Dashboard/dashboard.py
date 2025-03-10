@@ -172,28 +172,6 @@ def create_hourly_pattern_df(df):
     
     return pd.DataFrame(hourly_data)
 
-def create_heatmap_data(df):
-    # Membuat data untuk heatmap berdasarkan hari dan bulan
-    heatmap_data = df.pivot_table(
-        index='hari', 
-        columns='bulan', 
-        values='jumlah',
-        aggfunc='mean'
-    )
-    
-    # Mengurutkan hari
-    correct_order = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu']
-    heatmap_data = heatmap_data.reindex(correct_order)
-    
-    # Mengurutkan bulan
-    ordered_months = [
-        'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-        'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
-    ]
-    heatmap_data = heatmap_data[ordered_months]
-    
-    return heatmap_data
-
 # Membuat Dashboard Streamlit
 st.title('Dashboard Penyewaan Sepeda')
 
@@ -224,6 +202,10 @@ with st.sidebar:
         default=all_weather
     )
     
+    # Memastikan setidaknya satu kondisi cuaca dipilih
+    if not selected_weather:
+        selected_weather = all_weather  # Kembalikan ke semua kondisi cuaca jika tidak ada yang dipilih
+    
     # Tipe hari
     day_type = st.radio(
         'Tipe Hari',
@@ -253,7 +235,6 @@ holiday_rent_df = create_holiday_rent_df(main_df)
 weather_rent_df = create_weather_rent_df(main_df)
 temp_agg, humidity_agg = create_temp_humidity_df(main_df)
 hourly_pattern_df = create_hourly_pattern_df(main_df)
-heatmap_data = create_heatmap_data(main_df)
 
 # Membuat jumlah penyewaan harian
 st.header('Ringkasan Penyewaan')
@@ -352,26 +333,6 @@ with col2:
     plt.title('Distribusi Penyewaan Berdasarkan Musim', fontsize=14)
     plt.tight_layout()
     st.pyplot(fig)
-
-# Visualisasi Tambahan - Heatmap hari vs bulan
-st.header('Heatmap Penyewaan: Hari vs Bulan')
-fig, ax = plt.subplots(figsize=(14, 8))
-
-# Membuat colormap kustom
-cmap = LinearSegmentedColormap.from_list('custom_cmap', [custom_colors[5], custom_colors[3]], N=100)
-
-sns.heatmap(
-    heatmap_data, 
-    annot=True, 
-    fmt='.0f', 
-    cmap=cmap,
-    linewidths=.5,
-    ax=ax
-)
-
-plt.title('Rata-rata Penyewaan Berdasarkan Hari dan Bulan', fontsize=14)
-plt.tight_layout()
-st.pyplot(fig)
 
 # Membuat jumlah penyewaan berdasarkan kondisi cuaca
 st.header('Penyewaan Berdasarkan Kondisi Cuaca')
