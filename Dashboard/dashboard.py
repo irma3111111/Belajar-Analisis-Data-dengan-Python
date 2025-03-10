@@ -48,25 +48,35 @@ day_df['bulan'] = day_df['bulan'].map({
     1: 'Jan', 2: 'Feb', 3: 'Mar', 4: 'Apr', 5: 'Mei', 6: 'Jun',
     7: 'Jul', 8: 'Agu', 9: 'Sep', 10: 'Okt', 11: 'Nov', 12: 'Des'
 })
-day_df['musim'] = day_df['musim'].map({
-    1: 'Semi', 2: 'Panas', 3: 'Gugur', 4: 'Dingin'
-})
+
 day_df['hari'] = day_df['hari'].map({
     0: 'Minggu', 1: 'Senin', 2: 'Selasa', 3: 'Rabu', 4: 'Kamis', 5: 'Jumat', 6: 'Sabtu'
 })
-day_df['kondisi_cuaca'] = day_df['kondisi_cuaca'].map({
-    1: 'Cerah/Berawan Sebagian',
-    2: 'Berkabut/Berawan',
-    3: 'Hujan/Salju Ringan',
-    4: 'Cuaca Buruk'
-})
+
 day_df['hari_libur'] = day_df['hari_libur'].map({
     0: 'Bukan Hari Libur',
     1: 'Hari Libur'
 })
+
 day_df['hari_kerja'] = day_df['hari_kerja'].map({
     0: 'Akhir Pekan/Libur',
     1: 'Hari Kerja'
+})
+
+# Mengubah angka musim menjadi nama musim
+day_df['musim'] = day_df['musim'].map({
+    1: 'Musim Semi',
+    2: 'Musim Panas',
+    3: 'Musim Gugur',
+    4: 'Musim Dingin'
+})
+
+# Mengubah angka kondisi cuaca menjadi keterangan
+day_df['kondisi_cuaca'] = day_df['kondisi_cuaca'].map({
+    1: 'Cerah',
+    2: 'Berkabut/Berawan',
+    3: 'Hujan Ringan',
+    4: 'Hujan Lebat'
 })
 
 # Normalisasi suhu, kelembaban (skala 0-1 menjadi persentase)
@@ -91,10 +101,6 @@ def create_daily_registered_rent_df(df):
         'pengguna_terdaftar': 'sum'
     }).reset_index()
     return daily_registered_rent_df
-    
-def create_season_rent_df(df):
-    season_rent_df = df.groupby(by='musim')[['pengguna_terdaftar', 'pengguna_kasual']].sum().reset_index()
-    return season_rent_df
 
 def create_monthly_rent_df(df):
     monthly_rent_df = df.groupby(by='bulan').agg({
@@ -123,22 +129,38 @@ def create_weekday_rent_df(df):
 
 def create_workingday_rent_df(df):
     workingday_rent_df = df.groupby(by='hari_kerja').agg({
-        'jumlah': 'sum'
+        'jumlah': 'sum',
+        'pengguna_kasual': 'sum',
+        'pengguna_terdaftar': 'sum'
     }).reset_index()
     return workingday_rent_df
 
 def create_holiday_rent_df(df):
     holiday_rent_df = df.groupby(by='hari_libur').agg({
-        'jumlah': 'sum'
+        'jumlah': 'sum',
+        'pengguna_kasual': 'sum',
+        'pengguna_terdaftar': 'sum'
     }).reset_index()
     return holiday_rent_df
+
+def create_season_rent_df(df):
+    season_rent_df = df.groupby(by='musim').agg({
+        'jumlah': 'sum',
+        'pengguna_kasual': 'sum',
+        'pengguna_terdaftar': 'sum'
+    }).reset_index()
+    # Mengurutkan berdasarkan urutan musim
+    correct_order = ['Musim Semi', 'Musim Panas', 'Musim Gugur', 'Musim Dingin']
+    season_rent_df['musim'] = pd.Categorical(season_rent_df['musim'], categories=correct_order, ordered=True)
+    season_rent_df = season_rent_df.sort_values('musim')
+    return season_rent_df
 
 def create_weather_rent_df(df):
     weather_rent_df = df.groupby(by='kondisi_cuaca').agg({
         'jumlah': 'sum',
         'pengguna_kasual': 'sum',
         'pengguna_terdaftar': 'sum'
-    })
+    }).reset_index()
     return weather_rent_df
 
 def create_temp_humidity_df(df):
@@ -190,56 +212,44 @@ with st.sidebar:
         value=[min_date, max_date]
     )
     
-    # Filter musim
-    all_seasons = day_df['musim'].unique().tolist()
-    selected_seasons = st.multiselect(
-        'Pilih Musim',
-        options=all_seasons,
-        default=[all_seasons[0]]  # Set default to the first season
-    )
-    
-    # Memastikan setidaknya satu musim dipilih
-    if not selected_seasons:
-        selected_seasons = [all_seasons[0]]  # Kembali ke musim pertama jika tidak ada yang dipilih
-    
-    # Filter kondisi cuaca
-    all_weather = day_df['kondisi_cuaca'].unique().tolist()
-    selected_weather = st.multiselect(
-        'Pilih Kondisi Cuaca',
-        options=all_weather,
-        default=[all_weather[0]]  # Set default to the first weather condition
-    )
-    
-    # Memastikan setidaknya satu kondisi cuaca dipilih
-    if not selected_weather:
-        selected_weather = [all_weather[0]]  # Kembali ke kondisi cuaca pertama jika tidak ada yang dipilih
-    
     # Tipe hari
     day_type = st.radio(
         'Tipe Hari',
         options=['Semua', 'Hari Kerja', 'Akhir Pekan/Libur']
     )
+    
+    # Filter musim
+    available_seasons = day_df['musim'].unique().tolist()
+    selected_seasons = st.multiselect('Musim', available_seasons, default=available_seasons)
+    
+    # Filter kondisi cuaca
+    available_weather = day_df['kondisi_cuaca'].unique().tolist()
+    selected_weather = st.multiselect('Kondisi Cuaca', available_weather, default=available_weather)
 
 # Filter data berdasarkan seleksi
 main_df = day_df[(day_df['tanggal'].dt.date >= start_date) & 
-                 (day_df['tanggal'].dt.date <= end_date) &
-                 (day_df['musim'].isin(selected_seasons)) &
-                 (day_df['kondisi_cuaca'].isin(selected_weather))]
+                 (day_df['tanggal'].dt.date <= end_date)]
 
 if day_type == 'Hari Kerja':
     main_df = main_df[main_df['hari_kerja'] == 'Hari Kerja']
 elif day_type == 'Akhir Pekan/Libur':
     main_df = main_df[main_df['hari_kerja'] == 'Akhir Pekan/Libur']
 
+# Filter berdasarkan musim dan cuaca
+if selected_seasons:
+    main_df = main_df[main_df['musim'].isin(selected_seasons)]
+if selected_weather:
+    main_df = main_df[main_df['kondisi_cuaca'].isin(selected_weather)]
+
 # Menyiapkan berbagai dataframe dari data yang sudah difilter
 daily_rent_df = create_daily_rent_df(main_df)
 daily_casual_rent_df = create_daily_casual_rent_df(main_df)
 daily_registered_rent_df = create_daily_registered_rent_df(main_df)
-season_rent_df = create_season_rent_df(main_df)
 monthly_rent_df = create_monthly_rent_df(main_df)
 weekday_rent_df = create_weekday_rent_df(main_df)
 workingday_rent_df = create_workingday_rent_df(main_df)
 holiday_rent_df = create_holiday_rent_df(main_df)
+season_rent_df = create_season_rent_df(main_df)
 weather_rent_df = create_weather_rent_df(main_df)
 temp_agg, humidity_agg = create_temp_humidity_df(main_df)
 hourly_pattern_df = create_hourly_pattern_df(main_df)
@@ -322,54 +332,148 @@ with col1:
     st.pyplot(fig)
 
 with col2:
-    # Membuat jumlah penyewaan berdasarkan musim
-    st.header('Penyewaan Berdasarkan Musim')
+    # Membuat jumlah penyewaan berdasarkan hari
+    st.header('Penyewaan Berdasarkan Hari')
     fig, ax = plt.subplots(figsize=(12, 6))
     
     # Membuat diagram lingkaran
-    season_totals = season_rent_df.set_index('musim').sum(axis=1)
-    plt.pie(
-        season_totals, 
-        labels=season_totals.index, 
-        autopct='%1.1f%%',
-        colors=custom_colors[:4],
-        startangle=90,
-        shadow=True,
-        explode=[0.05, 0.05, 0.05, 0.05]
-    )
+    weekday_totals = weekday_rent_df.set_index('hari')['jumlah']
     
-    plt.title('Distribusi Penyewaan Berdasarkan Musim', fontsize=14)
-    plt.tight_layout()
-    st.pyplot(fig)
+    if not weekday_totals.empty:
+        # Create explode list based on the number of slices
+        explode = [0.05] * len(weekday_totals)
+        
+        plt.pie(
+            weekday_totals, 
+            labels=weekday_totals.index, 
+            autopct='%1.1f%%',
+            colors=custom_colors[:len(weekday_totals)],
+            startangle=90,
+            shadow=True,
+            explode=explode
+        )
+        
+        plt.title('Distribusi Penyewaan Berdasarkan Hari', fontsize=14)
+        plt.tight_layout()
+        st.pyplot(fig)
+    else:
+        # Clear the display if no slices to plot
+        st.write("Tidak ada data untuk ditampilkan.")
 
-# Membuat jumlah penyewaan berdasarkan kondisi cuaca
-st.header('Penyewaan Berdasarkan Kondisi Cuaca')
-
+# FITUR BARU: Penyewaan Berdasarkan Musim
+st.header('Penyewaan Berdasarkan Musim')
 col1, col2 = st.columns([2, 1])
 
 with col1:
-    fig, ax = plt.subplots(figsize=(10, 6))
+    fig, ax = plt.subplots(figsize=(12, 6))
     
-    weather_data = weather_rent_df.reset_index()
+    season_data = season_rent_df
     
-    colors = custom_colors[:len(weather_data)]
+    ax.bar(
+        season_data['musim'],
+        season_data['pengguna_kasual'],
+        color=custom_colors[0],
+        label='Pengguna Kasual'
+    )
+    
+    ax.bar(
+        season_data['musim'],
+        season_data['pengguna_terdaftar'],
+        bottom=season_data['pengguna_kasual'],
+        color=custom_colors[1],
+        label='Pengguna Terdaftar'
+    )
+    
+    for i, row in enumerate(season_data['jumlah']):
+        ax.text(i, row/2, f"{row:,.0f}", ha='center', va='center', fontsize=12, color='white', fontweight='bold')
+    
+    plt.legend()
+    plt.grid(axis='y', linestyle='--', alpha=0.7)
+    plt.title('Jumlah Penyewaan Berdasarkan Musim', fontsize=14)
+    plt.tight_layout()
+    st.pyplot(fig)
+
+with col2:
+    # Persentase untuk masing-masing musim
+    season_pct = season_data.set_index('musim')['jumlah'] / season_data['jumlah'].sum() * 100
+    st.dataframe(
+        pd.DataFrame({
+            'Musim': season_pct.index,
+            'Persentase (%)': season_pct.values.round(1)
+        }).set_index('Musim'),
+        use_container_width=True
+    )
+
+# FITUR BARU: Penyewaan Berdasarkan Kondisi Cuaca
+st.header('Penyewaan Berdasarkan Kondisi Cuaca')
+col1, col2 = st.columns([2, 1])
+
+with col1:
+    fig, ax = plt.subplots(figsize=(12, 6))
+    
+    weather_data = weather_rent_df
     
     ax.bar(
         weather_data['kondisi_cuaca'],
         weather_data['pengguna_kasual'],
-        label='Pengguna Kasual',
-        color=custom_colors[0]
+        color=custom_colors[0],
+        label='Pengguna Kasual'
     )
     
     ax.bar(
         weather_data['kondisi_cuaca'],
         weather_data['pengguna_terdaftar'],
         bottom=weather_data['pengguna_kasual'],
+        color=custom_colors[1],
+        label='Pengguna Terdaftar'
+    )
+    
+    for i, row in enumerate(weather_data['jumlah']):
+        ax.text(i, row/2, f"{row:,.0f}", ha='center', va='center', fontsize=12, color='white', fontweight='bold')
+    
+    plt.legend()
+    plt.grid(axis='y', linestyle='--', alpha=0.7)
+    plt.title('Jumlah Penyewaan Berdasarkan Kondisi Cuaca', fontsize=14)
+    plt.tight_layout()
+    st.pyplot(fig)
+
+with col2:
+    # Persentase untuk masing-masing kondisi cuaca
+    weather_pct = weather_data.set_index('kondisi_cuaca')['jumlah'] / weather_data['jumlah'].sum() * 100
+    st.dataframe(
+        pd.DataFrame({
+            'Kondisi Cuaca': weather_pct.index,
+            'Persentase (%)': weather_pct.values.round(1)
+        }).set_index('Kondisi Cuaca'),
+        use_container_width=True
+    )
+
+# Membuat jumlah penyewaan berdasarkan hari libur
+st.header('Penyewaan Berdasarkan Hari Libur')
+
+col1, col2 = st.columns([2, 1])
+
+with col1:
+    fig, ax = plt.subplots(figsize=(10, 6))
+    
+    holiday_data = holiday_rent_df
+    
+    ax.bar(
+        holiday_data['hari_libur'],
+        holiday_data['pengguna_kasual'],
+        label='Pengguna Kasual',
+        color=custom_colors[0]
+    )
+    
+    ax.bar(
+        holiday_data['hari_libur'],
+        holiday_data['pengguna_terdaftar'],
+        bottom=holiday_data['pengguna_kasual'],
         label='Pengguna Terdaftar',
         color=custom_colors[1]
     )
     
-    for i, row in enumerate(weather_data['jumlah']):
+    for i, row in enumerate(holiday_data['jumlah']):
         ax.text(i, row/2, f"{row:,.0f}", ha='center', va='center', fontsize=12, color='white', fontweight='bold')
     
     ax.set_xlabel(None)
@@ -382,12 +486,12 @@ with col1:
 
 with col2:
     # Persentase untuk masing-masing kondisi cuaca
-    weather_pct = weather_data.set_index('kondisi_cuaca')['jumlah'] / weather_data['jumlah'].sum() * 100
+    holiday_pct = holiday_data.set_index('hari_libur')['jumlah'] / holiday_data['jumlah'].sum() * 100
     st.dataframe(
         pd.DataFrame({
-            'Kondisi Cuaca': weather_pct.index,
-            'Persentase (%)': weather_pct.values.round(1)
-        }).set_index('Kondisi Cuaca'),
+            'Hari Libur': holiday_pct.index,
+            'Persentase (%)': holiday_pct.values.round(1)
+        }).set_index('Hari Libur'),
         use_container_width=True
     )
 
@@ -433,3 +537,36 @@ with col2:
     plt.xticks(rotation=45)
     plt.tight_layout()
     st.pyplot(fig)
+
+# FITUR BARU: Korelasi Musim dengan Penyewaan
+st.header('Korelasi Musim, Cuaca, dan Penyewaan')
+
+# Buat visualisasi heatmap
+fig, ax = plt.subplots(figsize=(12, 8))
+
+# Pivot tabel untuk membuat data yang sesuai untuk heatmap
+if not main_df.empty and len(main_df['musim'].unique()) > 1 and len(main_df['kondisi_cuaca'].unique()) > 1:
+    heatmap_data = main_df.pivot_table(
+        index='musim', 
+        columns='kondisi_cuaca', 
+        values='jumlah', 
+        aggfunc='mean'
+    )
+    
+    # Membuat custom colormap dari biru muda ke biru tua
+    cmap = LinearSegmentedColormap.from_list('custom_blue', ['#DBEDFF', '#0068C9'])
+    
+    sns.heatmap(
+        heatmap_data, 
+        annot=True, 
+        fmt=".0f", 
+        linewidths=.5, 
+        ax=ax,
+        cmap=cmap
+    )
+    
+    plt.title('Rata-rata Penyewaan Berdasarkan Musim dan Kondisi Cuaca')
+    plt.tight_layout()
+    st.pyplot(fig)
+else:
+    st.write("Data tidak cukup untuk menampilkan heatmap korelasi.")
