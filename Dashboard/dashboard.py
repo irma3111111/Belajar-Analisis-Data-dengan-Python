@@ -172,28 +172,6 @@ def create_hourly_pattern_df(df):
     
     return pd.DataFrame(hourly_data)
 
-def create_heatmap_data(df):
-    # Membuat data untuk heatmap berdasarkan hari dan bulan
-    heatmap_data = df.pivot_table(
-        index='hari', 
-        columns='bulan', 
-        values='jumlah',
-        aggfunc='mean'
-    )
-    
-    # Mengurutkan hari
-    correct_order = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu']
-    heatmap_data = heatmap_data.reindex(correct_order)
-    
-    # Mengurutkan bulan
-    ordered_months = [
-        'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-        'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'
-    ]
-    heatmap_data = heatmap_data[ordered_months]
-    
-    return heatmap_data
-
 # Membuat Dashboard Streamlit
 st.title('Dashboard Penyewaan Sepeda')
 
@@ -217,24 +195,24 @@ with st.sidebar:
     selected_seasons = st.multiselect(
         'Pilih Musim',
         options=all_seasons,
-        default=all_seasons
+        default=[all_seasons[0]]  # Set default to the first season
     )
     
-    # Pastikan setidaknya satu musim dipilih
+    # Memastikan setidaknya satu musim dipilih
     if not selected_seasons:
-        selected_seasons = all_seasons  # Kembalikan ke semua musim jika tidak ada yang dipilih
+        selected_seasons = [all_seasons[0]]  # Kembali ke musim pertama jika tidak ada yang dipilih
     
     # Filter kondisi cuaca
     all_weather = day_df['kondisi_cuaca'].unique().tolist()
     selected_weather = st.multiselect(
         'Pilih Kondisi Cuaca',
         options=all_weather,
-        default=all_weather
+        default=[all_weather[0]]  # Set default to the first weather condition
     )
     
-    # Pastikan setidaknya satu kondisi cuaca dipilih
+    # Memastikan setidaknya satu kondisi cuaca dipilih
     if not selected_weather:
-        selected_weather = all_weather  # Kembalikan ke semua cuaca jika tidak ada yang dipilih
+        selected_weather = [all_weather[0]]  # Kembali ke kondisi cuaca pertama jika tidak ada yang dipilih
     
     # Tipe hari
     day_type = st.radio(
@@ -265,7 +243,6 @@ holiday_rent_df = create_holiday_rent_df(main_df)
 weather_rent_df = create_weather_rent_df(main_df)
 temp_agg, humidity_agg = create_temp_humidity_df(main_df)
 hourly_pattern_df = create_hourly_pattern_df(main_df)
-heatmap_data = create_heatmap_data(main_df)
 
 # Membuat jumlah penyewaan harian
 st.header('Ringkasan Penyewaan')
@@ -364,26 +341,6 @@ with col2:
     plt.title('Distribusi Penyewaan Berdasarkan Musim', fontsize=14)
     plt.tight_layout()
     st.pyplot(fig)
-
-# Visualisasi Tambahan - Heatmap hari vs bulan
-st.header('Heatmap Penyewaan: Hari vs Bulan')
-fig, ax = plt.subplots(figsize=(14, 8))
-
-# Membuat colormap kustom
-cmap = LinearSegmentedColormap.from_list('custom_cmap', [custom_colors[5], custom_colors[3]], N=100)
-
-sns.heatmap(
-    heatmap_data, 
-    annot=True, 
-    fmt='.0f', 
-    cmap=cmap,
-    linewidths=.5,
-    ax=ax
-)
-
-plt.title('Rata-rata Penyewaan Berdasarkan Hari dan Bulan', fontsize=14)
-plt.tight_layout()
-st.pyplot(fig)
 
 # Membuat jumlah penyewaan berdasarkan kondisi cuaca
 st.header('Penyewaan Berdasarkan Kondisi Cuaca')
