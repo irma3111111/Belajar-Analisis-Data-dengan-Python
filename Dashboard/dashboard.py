@@ -13,7 +13,7 @@ st.set_page_config(layout="wide", page_title="Dashboard Penyewaan Sepeda")
 custom_colors = ["#FF6B6B", "#4ECDC4", "#FFD166", "#06D6A0", "#118AB2", "#073B4C"]
 custom_palette = sns.color_palette(custom_colors)
 sns.set_palette(custom_palette)
-sns.set(style='darkgrid')
+sns.set(style='darkgrid')  
 
 # Menyiapkan data day_df
 day_df = pd.read_csv(os.path.join(os.path.dirname(__file__), "day.csv"))
@@ -378,42 +378,36 @@ col1, col2 = st.columns([2, 1])
 with col1:
     fig, ax = plt.subplots(figsize=(12, 6))
     
-    season_data = season_rent_df
+    season_data = create_season_rent_df(main_df)
+    
+    # Plotting the bar chart for all seasons in a single chart
+    bar_width = 0.35
+    index = np.arange(len(season_data['musim']))
     
     ax.bar(
-        season_data['musim'],
+        index,
         season_data['pengguna_kasual'],
-        color=custom_colors[0],
-        label='Pengguna Kasual'
+        bar_width,
+        label='Pengguna Kasual',
+        color=custom_colors[0]
     )
     
     ax.bar(
-        season_data['musim'],
+        index + bar_width,
         season_data['pengguna_terdaftar'],
-        bottom=season_data['pengguna_kasual'],
-        color=custom_colors[1],
-        label='Pengguna Terdaftar'
+        bar_width,
+        label='Pengguna Terdaftar',
+        color=custom_colors[1]
     )
     
-    for i, row in enumerate(season_data['jumlah']):
-        ax.text(i, row/2, f"{row:,.0f}", ha='center', va='center', fontsize=12, color='white', fontweight='bold')
-    
-    plt.legend()
-    plt.grid(axis='y', linestyle='--', alpha=0.7)
-    plt.title('Jumlah Penyewaan Berdasarkan Musim', fontsize=14)
+    ax.set_xlabel('Musim')
+    ax.set_ylabel('Jumlah Penyewaan')
+    ax.set_title('Jumlah Penyewaan Berdasarkan Musim')
+    ax.set_xticks(index + bar_width / 2)
+    ax.set_xticklabels(season_data['musim'])
+    ax.legend()
     plt.tight_layout()
     st.pyplot(fig)
-
-with col2:
-    # Persentase untuk masing-masing musim
-    season_pct = season_data.set_index('musim')['jumlah'] / season_data['jumlah'].sum() * 100
-    st.dataframe(
-        pd.DataFrame({
-            'Musim': season_pct.index,
-            'Persentase (%)': season_pct.values.round(1)
-        }).set_index('Musim'),
-        use_container_width=True
-    )
 
 # FITUR BARU: Penyewaan Berdasarkan Kondisi Cuaca
 st.header('Penyewaan Berdasarkan Kondisi Cuaca')
@@ -447,17 +441,6 @@ with col1:
     plt.title('Jumlah Penyewaan Berdasarkan Kondisi Cuaca', fontsize=14)
     plt.tight_layout()
     st.pyplot(fig)
-
-with col2:
-    # Persentase untuk masing-masing kondisi cuaca
-    weather_pct = weather_data.set_index('kondisi_cuaca')['jumlah'] / weather_data['jumlah'].sum() * 100
-    st.dataframe(
-        pd.DataFrame({
-            'Kondisi Cuaca': weather_pct.index,
-            'Persentase (%)': weather_pct.values.round(1)
-        }).set_index('Kondisi Cuaca'),
-        use_container_width=True
-    )
 
 # Membuat jumlah penyewaan berdasarkan hari libur
 st.header('Penyewaan Berdasarkan Hari Libur')
@@ -494,17 +477,6 @@ with col1:
     ax.legend()
     plt.tight_layout()
     st.pyplot(fig)
-
-with col2:
-    # Persentase untuk masing-masing kondisi cuaca
-    holiday_pct = holiday_data.set_index('hari_libur')['jumlah'] / holiday_data['jumlah'].sum() * 100
-    st.dataframe(
-        pd.DataFrame({
-            'Hari Libur': holiday_pct.index,
-            'Persentase (%)': holiday_pct.values.round(1)
-        }).set_index('Hari Libur'),
-        use_container_width=True
-    )
 
 # Visualisasi Tambahan - Pengaruh Suhu dan Kelembaban
 st.header('Pengaruh Suhu dan Kelembaban')
