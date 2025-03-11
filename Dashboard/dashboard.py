@@ -343,14 +343,25 @@ with col2:
         # Create explode list based on the number of slices
         explode = [0.05] * len(weekday_totals)
         
-        plt.pie(
+        # PERUBAHAN DI SINI - Menggunakan labels=None dan menambahkan legend
+        wedges, texts, autotexts = plt.pie(
             weekday_totals, 
-            labels=weekday_totals.index, 
+            labels=None,  # Menghapus label langsung dari diagram pie
             autopct='%1.1f%%',
             colors=custom_colors[:len(weekday_totals)],
             startangle=90,
             shadow=True,
-            explode=explode
+            explode=explode,
+            textprops={'fontsize': 12}
+        )
+        
+        # Menambahkan legend untuk label hari
+        plt.legend(
+            wedges, 
+            weekday_totals.index,
+            title="Hari",
+            loc="center left",
+            bbox_to_anchor=(1, 0, 0.5, 1)
         )
         
         plt.title('Distribusi Penyewaan Berdasarkan Hari', fontsize=14)
@@ -569,4 +580,4 @@ if not main_df.empty and len(main_df['musim'].unique()) > 1 and len(main_df['kon
     plt.tight_layout()
     st.pyplot(fig)
 else:
-    st.write("Data tidak cukup untuk menampilkan heatmap korelasi.")
+    st.write("Data tidak cukup untuk menampilkan heatmap korelasi tambahkan filter lainnya.")

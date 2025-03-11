@@ -23,7 +23,7 @@ https://drive.google.com/file/d/1RaBmV6Q6FYWU4HWZs80Suqd7KQC34diQ/view
 
 ### Note:
 - Hasil proses 1 - 3 dapat di lihat di Proyek_Analisis_Data.ipynb
-- Hasil Proses 4 dapat di akses di tautan streamlit diatas atau pada lampiran Dashboard dibawah.  
+- Hasil Proses 4 dapat di akses di tautan streamlit diatas.
 
 ## Menjalankan Program
 #### **notebook.ipynb**  
@@ -46,12 +46,5 @@ https://drive.google.com/file/d/1RaBmV6Q6FYWU4HWZs80Suqd7KQC34diQ/view
    ```sh
    streamlit run dashboard.py
    ```
-## Lampiran halaman Dashboard
-![image](https://github.com/user-attachments/assets/ad298cfc-1e1d-46f0-a111-dcca1b2daf44)
-![image](https://github.com/user-attachments/assets/736f719d-ced8-4212-bb8d-00500b1e662a)
-![image](https://github.com/user-attachments/assets/32beaa57-e848-4300-9acf-a1c8d3c3433e)
-![image](https://github.com/user-attachments/assets/f3b0af70-338d-40f0-ad16-de265ad32cac)
-![image](https://github.com/user-attachments/assets/9502f9ce-b8e0-454b-b37f-8ffb06750024)
-
 
 
